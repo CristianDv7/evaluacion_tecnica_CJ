@@ -1,0 +1,43 @@
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: container_ile_db
+    restart: always
+    env_file:
+      - ./mysql.env
+    ports:
+      - "3306:3306"
+    networks:
+      - app-network
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+
+  
+  app:
+    build:
+      context: ./ejercicio1
+      dockerfile: Dockerfile
+    container_name: NodeApp
+    env_file:
+      - ./ejercicio1/app.env
+    networks:
+      - app-network
+    depends_on:
+      mysql:
+        condition: service_healthy
